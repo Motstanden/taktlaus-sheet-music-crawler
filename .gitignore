@@ -1,5 +1,6 @@
 # environment
 .venv
+.env
 
 # visual studio code tools
 .vscode
