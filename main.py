@@ -6,7 +6,7 @@ def clear_terminal():
     os.system('clear')
 
 def setup_environment() -> Tuple[str, str]:
-    load_dotenv(verbose=True)
+    load_dotenv()
     username = os.getenv('TAKTLAUS_USERNAME')
     password = os.getenv('TAKTLAUS_PASSWORD')
     return username, password 
