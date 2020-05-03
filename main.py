@@ -34,6 +34,19 @@ def parse_table_row(row :bs4_element.Tag) -> Tuple[str, str, str, str]:
 
     return title, url, arranger, composer 
 
+def parse_song_table_row(row :bs4_element.Tag) -> Tuple[str, str, str]:
+
+    # Find the anchor that contains the name of the song, and the url to the pdf
+    anchor = row.find('a')
+    name = anchor.string.strip()
+    url = anchor['href'].strip()
+
+    # Finds a column that contains the size string 
+    columns = row.find_all('td')
+    size = columns[1].string.strip()
+
+    return name, url, size 
+
 def setup_environment() -> Tuple[str, str]:
     load_dotenv()
     username = os.getenv('TAKTLAUS_USERNAME')
@@ -45,7 +58,7 @@ if __name__ == "__main__":
     username, password = setup_environment()
 
     s = requests.session()
-    domain = 'https://taktlaus.no/'
+    domain = 'https://taktlaus.no'
     data = {
         'name': username,
         'pass': password,
@@ -68,10 +81,17 @@ if __name__ == "__main__":
 
     for row in table:
         title, url, arranger, composer = parse_table_row(row)
-        print('{:<60}'.format(title), '{:<20}'.format(url), '{:<30}'.format(arranger), '{:<30}'.format(composer))
+        # print('{:<60}'.format(title), '{:<20}'.format(url), '{:<30}'.format(arranger), '{:<30}'.format(composer))
+        if title == '99 Luftballons': 
+            break # Work in progres, this will be removed once finished
 
 
+    song_url = domain + url
+    r3 = s.get(song_url)
+    soup3 = BeautifulSoup(r3.content, 'lxml')
 
-
-
+    table = soup3.select('tbody tr')
+    for row in table:
+        name, pdf_url, size_string = parse_song_table_row(row)
+        print('{:<40}'.format(name), '{:<100}'.format(pdf_url), '{:<20}'.format(size_string))
     
