@@ -34,6 +34,27 @@ def parse_table_row(row :bs4_element.Tag) -> Tuple[str, str, str, str]:
 
     return title, url, arranger, composer 
 
+def save_pdf(file :bytes, path):
+    with open(path, 'wb') as f:
+        f.write(file)
+
+def login(username :str, password :str) -> requests.sessions.Session:
+    # In order to stay logged in we must start a session
+    session = requests.session()
+    # Credentials that must be sent 
+    data = {
+        'name': username,
+        'pass': password,
+        'form_build_id': 'form-s_5qMqZ0hgv3ZOpDLDntan3HODbAxRoFeIqaW2f0hJk',
+        'form_id': 'user_login_block',
+        'antibot_key': '2d1379116de05898e27d9033859db912',
+        'op': 'Logg+inn'
+    }
+    url = 'https://taktlaus.no/node/2?destination=node/6225' # login url
+    r = session.post(url, data=data) # Perform a login action
+
+    return session 
+
 def parse_song_table_row(row :bs4_element.Tag) -> Tuple[str, str, str]:
 
     # Find the anchor that contains the name of the song, and the url to the pdf
@@ -53,45 +74,42 @@ def setup_environment() -> Tuple[str, str]:
     password = os.getenv('TAKTLAUS_PASSWORD')
     return username, password 
 
+def find_table(url :str, session :requests.sessions.Session) -> bs4_element.Tag:
+    r = session.get(url)
+    soup = BeautifulSoup(r.content, 'lxml')
+    table = soup.select('tbody tr')
+
+    return table
+
 if __name__ == "__main__":
     clear_terminal()
-    username, password = setup_environment()
 
-    s = requests.session()
     domain = 'https://taktlaus.no'
-    data = {
-        'name': username,
-        'pass': password,
-        'form_build_id': 'form-s_5qMqZ0hgv3ZOpDLDntan3HODbAxRoFeIqaW2f0hJk',
-        'form_id': 'user_login_block',
-        'antibot_key': '2d1379116de05898e27d9033859db912',
-        'op': 'Logg+inn'
-    }
-    url = 'https://taktlaus.no/node/2?destination=node/6225'
-    r = s.post(url, data=data)
-    print(r)
-
-    soup = BeautifulSoup(r.content, 'lxml')   
-
-    url2 = 'https://taktlaus.no/sheetmusic'
-    r2 = s.get(url2)
-    soup2 = BeautifulSoup(r2.content, 'lxml')
-
-    table = soup2.select('tbody tr')
-
-    for row in table:
-        title, url, arranger, composer = parse_table_row(row)
-        # print('{:<60}'.format(title), '{:<20}'.format(url), '{:<30}'.format(arranger), '{:<30}'.format(composer))
-        if title == '99 Luftballons': 
-            break # Work in progres, this will be removed once finished
-
-
-    song_url = domain + url
-    r3 = s.get(song_url)
-    soup3 = BeautifulSoup(r3.content, 'lxml')
-
-    table = soup3.select('tbody tr')
-    for row in table:
-        name, pdf_url, size_string = parse_song_table_row(row)
-        print('{:<40}'.format(name), '{:<100}'.format(pdf_url), '{:<20}'.format(size_string))
+    username, password = setup_environment()
     
+    session = login(username, password)
+
+    archive_url = domain + '/sheetmusic'
+    archive_table = find_table(archive_url, session)
+
+    for row in archive_table:
+        song_title, relative_url, arranger, composer = parse_table_row(row)
+        # print('{:<60}'.format(title), '{:<20}'.format(url), '{:<30}'.format(arranger), '{:<30}'.format(composer))
+
+        if song_title == '99 Luftballons': 
+            
+            song_url = domain + relative_url
+            song_table = find_table(song_url, session)
+            
+            for row in song_table:
+                name, pdf_url, size_string = parse_song_table_row(row)
+            
+            print('{:<40}'.format(name), '{:<100}'.format(pdf_url), '{:<20}'.format(size_string))
+            
+            r = session.get(pdf_url)
+            path = './downloads/' + name
+            save_pdf(r.content, path)
+
+            break # work in progress
+
+# def download_pdf(s )
