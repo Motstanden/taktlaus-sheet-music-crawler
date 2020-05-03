@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from typing import Tuple
+from typing import Tuple, List
 import requests
 from bs4 import BeautifulSoup, element as bs4_element
 import re
@@ -15,9 +15,6 @@ class color:
 def header_print(text :str, header_color :color = color.YELLOW) -> None:
     print('\n')
     print(header_color + ':::::::::::::::::', text.upper(), ':::::::::::::::::', color.END)    
-
-def clear_terminal():
-    os.system('clear')
 
 def parse_table_row(row :bs4_element.Tag) -> Tuple[str, str, str, str]:
     # Find the anchor that contains the name of the song, and the url to the song pdfs
@@ -68,6 +65,19 @@ def parse_song_table_row(row :bs4_element.Tag) -> Tuple[str, str, str]:
     size = columns[1].string.strip()
 
     return name, url, size 
+def create_valid_file_name(dirty_name :str, dirty_size :str):
+    
+    dirty_size = re.sub('\.',' dot ', dirty_size)   # replace . with dot
+    clean_size = re.sub('\s','-', dirty_size)       # replace white space characters with -
+    size = '____' + clean_size                            # prepend ____
+
+    # Add the csize string before the file extension '.pdf' 
+    dirty_name = re.sub('\.pdf', size, dirty_name)
+    dirty_name += '.pdf'
+
+    clean_name = re.sub('[<>:"/\|?*]', '', dirty_name)  # Remove characters that are not allowed by windows
+    
+    return clean_name
 
 def setup_environment() -> Tuple[str, str]:
     load_dotenv()
@@ -81,10 +91,8 @@ def find_table(url :str, session :requests.sessions.Session) -> bs4_element.Tag:
     table = soup.select('tbody tr')
 
     return table
-
-if __name__ == "__main__":
-    clear_terminal()
-
+    
+def run(print_progress = True):
     domain = 'https://taktlaus.no'
     username, password = setup_environment()
     
@@ -93,53 +101,97 @@ if __name__ == "__main__":
     archive_url = domain + '/sheetmusic'
     archive_table = find_table(archive_url, session)
 
+    changed_folders =[] 
+    counter = 0
     for row in archive_table:
         song_title, relative_url, arranger, composer = parse_table_row(row)
         # print('{:<60}'.format(title), '{:<20}'.format(url), '{:<30}'.format(arranger), '{:<30}'.format(composer))
 
         # Create a valid folder name
-        folder_name = song_title + "----" + arranger + '----' + composer
+        folder_name = song_title + "____" + arranger + '____' + composer
         filtered_folder_name = re.sub('[<>:"/\|?*]', '', folder_name)
-        folder_path = Path('./downloads/'+ filtered_folder_name)
-
+        # folder_path = Path('./downloads/'+ filtered_folder_name)
+        folder_path = Path().joinpath('./downloads').joinpath(filtered_folder_name)
         song_url = domain + relative_url
         song_table = find_table(song_url, session)
 
+        folder = song_folder()
+        folder.path = folder_path.absolute()
         if folder_path.exists():
             # update folder
+            folder.is_new = False
+
             for row in song_table:
                 name, pdf_url, size_string = parse_song_table_row(row)      
 
                 # Make a valid path
-                filtered_name = re.sub('[<>:"/\|?*]', '', name)
-                file_path = folder_path.joinpath(filtered_name)
+                file_name = create_valid_file_name(name, size_string)
+                file_path = folder_path.joinpath(file_name)
                 file_path = file_path.with_suffix('.pdf')
 
-                print('Checking if',color.YELLOW, name, color.END, 'is in', color.YELLOW, file_path, color.END)
+                if print_progress:
+                    print('Checking if',color.YELLOW, name, color.END, 'is in', color.YELLOW, file_path, color.END)
 
                 if not file_path.exists():
                     # Get the pdf from the url, and save it to the valid path
-                    print('Downloading ....... ', color.GREEN, name, color.END)
+                    if print_progress:
+                        print('Downloading ....... ', color.GREEN, name, color.END)
+
                     r = session.get(pdf_url)        
                     save_pdf(r.content, file_path)
+                    folder.new_files.append(file_path.absolute())
                     
         else:
             # Create new folder and download everything from the song_table
             folder_path.mkdir()
+            folder.is_new = True
+
             for row in song_table:
                 name, pdf_url, size_string = parse_song_table_row(row)        
                 
-                print('Downloading ....', color.GREEN, name, color.END)
+                if print_progress:
+                    print('Downloading ....', color.GREEN, name, color.END)
 
                 # Make a valid path
-                filtered_name = re.sub('[<>:"/\|?*]', '', name)
-                file_path = folder_path.joinpath(filtered_name)
+                file_name = create_valid_file_name(name, size_string)
+                file_path = folder_path.joinpath(file_name)
                 file_path = file_path.with_suffix('.pdf')
-                
+
                 # Get the pdf from the url, and save it to the valid path
                 r = session.get(pdf_url)        
                 save_pdf(r.content, file_path)
-       
+                folder.new_files.append(file_path.absolute())
+
+        if folder.new_files:
+            changed_folders.append(folder)
+
+        # fast run through code for debug purposes 
+        counter += 1
+        if counter > 4:  
+            return changed_folders
     print()
     print(color.GREEN, 'DONE', color.END)
-            
+
+class song_folder:
+
+    def __init__(self):
+        self.is_new = None
+        self.path = None
+        self.new_files = []
+
+
+if __name__ == "__main__":
+    os.system('cls')
+    
+    changed_folders = run()
+    print('\n\n')   
+
+    for folder in changed_folders:
+        print('Folder is new:', folder.is_new)
+        print('Folder path:  ', folder.path)
+        
+        print('New files:')
+        for file in folder.new_files:
+            print('                      ', file)
+        
+        print('\n \n')
