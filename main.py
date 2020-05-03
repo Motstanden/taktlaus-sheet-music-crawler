@@ -97,31 +97,49 @@ if __name__ == "__main__":
         song_title, relative_url, arranger, composer = parse_table_row(row)
         # print('{:<60}'.format(title), '{:<20}'.format(url), '{:<30}'.format(arranger), '{:<30}'.format(composer))
 
-        song_path = Path('./downloads/'+ song_title)
+        # Create a valid folder name
+        folder_name = song_title + "----" + arranger + '----' + composer
+        filtered_folder_name = re.sub('[<>:"/\|?*]', '', folder_name)
+        folder_path = Path('./downloads/'+ filtered_folder_name)
+
         song_url = domain + relative_url
         song_table = find_table(song_url, session)
 
-        if song_path.exists():
+        if folder_path.exists():
             # update folder
-            pass
+            for row in song_table:
+                name, pdf_url, size_string = parse_song_table_row(row)      
+
+                # Make a valid path
+                filtered_name = re.sub('[<>:"/\|?*]', '', name)
+                file_path = folder_path.joinpath(filtered_name)
+                file_path = file_path.with_suffix('.pdf')
+
+                print('Checking if',color.YELLOW, name, color.END, 'is in', color.YELLOW, file_path, color.END)
+
+                if not file_path.exists():
+                    # Get the pdf from the url, and save it to the valid path
+                    print('Downloading ....... ', color.GREEN, name, color.END)
+                    r = session.get(pdf_url)        
+                    save_pdf(r.content, file_path)
+                    
         else:
             # Create new folder and download everything from the song_table
-            song_path.mkdir()
+            folder_path.mkdir()
             for row in song_table:
                 name, pdf_url, size_string = parse_song_table_row(row)        
                 
-                print('Downloading ....', name)
+                print('Downloading ....', color.GREEN, name, color.END)
 
                 # Make a valid path
-                file_path = song_path.joinpath(name)
-                if file_path.suffix != ".pdf":
-                    file_path.joinpath(".pdf")
+                filtered_name = re.sub('[<>:"/\|?*]', '', name)
+                file_path = folder_path.joinpath(filtered_name)
+                file_path = file_path.with_suffix('.pdf')
                 
                 # Get the pdf from the url, and save it to the valid path
                 r = session.get(pdf_url)        
                 save_pdf(r.content, file_path)
-                
-        # Wip. This will be removed when the code is finished            
-        if song_title == '99 Luftballons': 
-            break
-
+       
+    print()
+    print(color.GREEN, 'DONE', color.END)
+            
