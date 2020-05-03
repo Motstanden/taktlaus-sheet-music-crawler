@@ -6,3 +6,6 @@
 .vscode
 
 downloads/*
+
+# What is this ?
+__pycache__
