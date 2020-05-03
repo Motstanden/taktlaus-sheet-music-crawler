@@ -4,6 +4,7 @@ from typing import Tuple
 import requests
 from bs4 import BeautifulSoup, element as bs4_element
 import re
+from pathlib import Path
 
 class color:
     YELLOW = '\033[33m'
@@ -96,20 +97,31 @@ if __name__ == "__main__":
         song_title, relative_url, arranger, composer = parse_table_row(row)
         # print('{:<60}'.format(title), '{:<20}'.format(url), '{:<30}'.format(arranger), '{:<30}'.format(composer))
 
-        if song_title == '99 Luftballons': 
-            
-            song_url = domain + relative_url
-            song_table = find_table(song_url, session)
-            
+        song_path = Path('./downloads/'+ song_title)
+        song_url = domain + relative_url
+        song_table = find_table(song_url, session)
+
+        if song_path.exists():
+            # update folder
+            pass
+        else:
+            # Create new folder and download everything from the song_table
+            song_path.mkdir()
             for row in song_table:
-                name, pdf_url, size_string = parse_song_table_row(row)
-            
-            print('{:<40}'.format(name), '{:<100}'.format(pdf_url), '{:<20}'.format(size_string))
-            
-            r = session.get(pdf_url)
-            path = './downloads/' + name
-            save_pdf(r.content, path)
+                name, pdf_url, size_string = parse_song_table_row(row)        
+                
+                print('Downloading ....', name)
 
-            break # work in progress
+                # Make a valid path
+                file_path = song_path.joinpath(name)
+                if file_path.suffix != ".pdf":
+                    file_path.joinpath(".pdf")
+                
+                # Get the pdf from the url, and save it to the valid path
+                r = session.get(pdf_url)        
+                save_pdf(r.content, file_path)
+                
+        # Wip. This will be removed when the code is finished            
+        if song_title == '99 Luftballons': 
+            break
 
-# def download_pdf(s )
