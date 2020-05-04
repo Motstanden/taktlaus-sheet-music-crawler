@@ -3,6 +3,11 @@ import crawler
 from typing import List
 from pathlib import Path
 import re
+from string import Template
+from dotenv import load_dotenv
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 def clear_terminal():
     os.system('clear')
@@ -31,25 +36,65 @@ def build_email_body(folders :List[ crawler.song_folder]) -> str:
 
             dirty_size = re.sub('-dot-', '.', dirty_size)
             size = re.sub('-', ' ', dirty_size)
-            
-            body += '{0: <75}'.format('\n\t\tNew file:\t' + file_name) 
-            body += '{0: <50}'.format('\tsize:\t' + size)
 
+            body += '\n'
+            body += '{0: <100}'.format('\t\tNew file:\t' + file_name) 
+            body += '{0: <50}'.format('size:\t' + size)
+
+        body += '\n'
+        body += '----------------------------------------------------------------------------------------------------------------------------------------'
     return body
 
+# Read a .txt file as a template string
+def read_template(path :str):
+    with open(path, 'r') as file:
+        return Template(file.read())
+
+# Get every line in .txt file, and return them as a list of strings
+def get_mail_list() -> List[str]:
+    emails = [] 
+    with open('mailing-list.txt', 'r') as file:
+        for line in file:
+            email = line.strip()
+            emails.append(email)
+    return emails
 
 def send_emails(body :str) -> None:
-    pass
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+
+        # Get credentials from .env file
+        username = os.getenv('EMAIL_USERNAME')
+        password = os.getenv('EMAIL_PASSWORD')
+
+        # Login to email account
+        server.ehlo()
+        server.login(username, password)
+        
+        mail_list = get_mail_list()
+        for mail_address in mail_list:
+            # Todo: experiment with the mime types
+            msg = MIMEMultipart()           # Mail
+            msg['From'] = username          # From this email user
+            msg['To'] = mail_address        # To this address
+            msg['Subject'] = 'Nye noter er tilgjengelig'  # With this tile 
+            msg.attach(MIMEText(body))   # With this text body
+
+            server.send_message(msg)
 
 def start_crawl():
+    load_dotenv()
     changed_folders = crawler.run()  
 
     # if anythig has changed:
     if len(changed_folders) > 0:
         body = build_email_body(changed_folders)
-        send_emails(body)
-
-
+        template = read_template('./template-mail.txt')
+        
+        full_message = template.substitute(BODY=body)
+        print(body)
+        print(full_message)
+        send_emails(full_message)
 
 if __name__ == "__main__":
     clear_terminal()
