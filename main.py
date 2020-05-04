@@ -21,15 +21,15 @@ def build_email_body(folders :List[ crawler.song_folder]) -> str:
 
         song_title, arranger, composer = re.split('____', folder.path.name)
 
-        body += '\n\n'
+        body += '\n'
         body += 'New song: ' if folder.is_new else 'This song has new files: ' 
-        body += '{0: <50}'.format('\n\tSong: ' + song_title)
+        body += '\n\tSong: ' + song_title
 
         if arranger.strip() != '':
-            body += '{0: <50}'.format('Arranger: ' + arranger)
+            body += '\n\tArranger: ' + arranger
 
-        if composer.split() != '':
-            body += '{0: <50}'.format('Composer: ' + composer)
+        if composer.strip() != '':
+            body += '\n\tComposer: ' + composer
 
         for file in folder.new_files:
             file_name, dirty_size = re.split('____', file.name)
@@ -38,8 +38,7 @@ def build_email_body(folders :List[ crawler.song_folder]) -> str:
             size = re.sub('-', ' ', dirty_size)
 
             body += '\n'
-            body += '{0: <100}'.format('\t\tNew file:\t' + file_name) 
-            body += '{0: <50}'.format('size:\t' + size)
+            body += '\t\tNew file:\t' + file_name + '\t\t\tsize:\t' + size 
 
         body += '\n'
         body += '----------------------------------------------------------------------------------------------------------------------------------------'
@@ -89,11 +88,10 @@ def start_crawl():
     # if anythig has changed:
     if len(changed_folders) > 0:
         body = build_email_body(changed_folders)
+        print(body)        
+
         template = read_template('./template-mail.txt')
-        
         full_message = template.substitute(BODY=body)
-        print(body)
-        print(full_message)
         send_emails(full_message)
 
 if __name__ == "__main__":

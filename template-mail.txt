@@ -1,8 +1,6 @@
 Arkivet til Dei taktlause har blitt oppdatert.
 
 Dette er nytt:
-
 ${BODY}
-
 Beste hilsen,
 Botten Anna
