@@ -166,9 +166,10 @@ def run(print_progress = True):
             changed_folders.append(folder)
 
         # fast run through code for debug purposes 
-        counter += 1
-        if counter > 4:  
-            return changed_folders
+        # counter += 1
+        # if counter > 4:  
+    return changed_folders
+
     print()
     print(color.GREEN, 'DONE', color.END)
 
