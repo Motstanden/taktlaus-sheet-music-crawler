@@ -84,15 +84,18 @@ def send_emails(body :str) -> None:
 def start_crawl():
     load_dotenv()
     changed_folders = crawler.run()  
+    print('\033[32m', "All files has been downloaded or updated.", '\033[m')
 
     # if anythig has changed:
     if len(changed_folders) > 0:
-        body = build_email_body(changed_folders)
-        print(body)        
+        print('\033[32m', "Sending e-mail notification to mailing list about new files...", '\033[m')
 
+        body = build_email_body(changed_folders)
         template = read_template('./template-mail.txt')
         full_message = template.substitute(BODY=body)
         send_emails(full_message)
+
+        print('\033[32m', "E-mail notifications has been sent.", '\033[m')
 
 if __name__ == "__main__":
     clear_terminal()
