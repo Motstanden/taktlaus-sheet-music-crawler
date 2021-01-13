@@ -1,1 +1,3 @@
 my-email@motstanden.no
+my-other-email@motstanden.no
+my-third-email@motstanden.no
