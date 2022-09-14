@@ -1,4 +1,4 @@
-# Sumary
+# Summary
 The purpose of this project was to crawl the previous version of [taktlaus.no](https://taktlaus.no/) for sheet music files.
 The code is now broken because the target website has been rewritten, and this code is not maintained (at all). 
 
