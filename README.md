@@ -2,36 +2,36 @@
 The purpose of this project was to crawl the previous version of [taktlaus.no](https://taktlaus.no/) for sheet music files.
 The code is now broken because the target website has been rewritten, and this code is not maintained (at all). 
 
-**Beware of extremely ugly code if you decide to venture further into this repo.**
+**Beware of ugly code if you decide to venture further into this repo.**
 
 # Setup
-1. Set opp et *virtual environment*
+1. Set up a *virtual environment*
     ```
     python -m venv .venv
     source .venv/scripts/activate
     ```
-2. Installer de nødvendige bibliotekene
+2. Install required dependencies
     ```
     pip install --requirement requirements.txt
     ```
-3. Lag en fil som heter .env, og legg til brukernavn og passord. Filen skal ha dette innholdet
+3. Create a `.env` file, and add your username and password for taktlaus.no. The file should have the following content:
     ```
-    TAKTLAUS_USERNAME=DITT_BRUKERNAVN_TIL_TAKTLAUS_SIDEN
-    TAKTLAUS_PASSWORD=DITT_PASSORD_TIL_TAKTLAUS_SIDEN
+    TAKTLAUS_USERNAME=<your-username-goes-here>
+    TAKTLAUS_PASSWORD=<your-passowrd-goes-here>
     ```
-4. Kjør script
+4. Run script
     ```
     python main.py
     ```
 
-# E-post-varsel
-Crawler-en kan sende e-post-varsel når den har oppdaget nye- eller oppdaterte noter. Følg disse stegene for å sette opp e-post-varsel.  
+# Email notification
+The craweler can send email notification if it detects that Dei Taktlause has uploaded or updated any files. Do the following steps to set this up: 
 
-1. Lag en dummy-e-post-konto som crawler-en kan bruke til å sende e-post gjennom. I skrivende stund er det bare testet med gmail-kontoer
+1. Create a dummy gmail account that the crawler can use.
 
-2. Legg til brukernan og passord for e-post-kontoen `.env` filen. Teksten du legger til skal se ut som dette:
+2. Append your email and passowrd information to the `.env` file. The appended text should look like this:
     ```
-    EMAIL_USERNAME=BRUKERNAVN_TIL_E_POST_KONTOEN_DIN
-    EMAIL_PASSWORD=PASSORD_TIL_E_POST_KONTOEN_DIN
+    EMAIL_USERNAME=<your-email-address-goes-here>
+    EMAIL_PASSWORD=<your-email-password-goes-here>
     ```
-3. Sørg for at e-post-kontoen du bruker tillater `SMTP`. For gmail-kontoer kan [denne guiden](https://stackabuse.com/how-to-send-emails-with-gmail-using-python/) følges. 
+3. Ensure that **SMTP** is allowed on your gmail account. Use [this guide](https://stackabuse.com/how-to-send-emails-with-gmail-using-python/) to set up *SMTP*. 
